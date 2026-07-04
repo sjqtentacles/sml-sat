@@ -100,6 +100,24 @@ struct
       val () = checkRaises "bad token raises"
                  (fn () => S.parseDimacs "p cnf 1 1\n1 x 0\n")
 
+      val () = section "DIMACS: out-of-range literal"
+      (* An oversized literal must fail with the documented `Dimacs`
+         exception on every compiler -- never `Overflow` (which MLton's
+         fixed 32-bit `Int.fromString` raises past 2^31 while Poly/ML's
+         63-bit int silently accepts it), so the behaviour is identical
+         under MLton and Poly/ML. *)
+      fun raisesDimacs thunk =
+        (ignore (thunk ()); false)
+          handle S.Dimacs _ => true | _ => false
+      val () = check "12-digit literal -> Dimacs"
+                 (raisesDimacs (fn () => S.parseDimacs "p cnf 1 1\n999999999999 0\n"))
+      val () = check "2147483648 (2^31) -> Dimacs"
+                 (raisesDimacs (fn () => S.parseDimacs "p cnf 1 1\n2147483648 0\n"))
+      val () = check "negative overflow -> Dimacs"
+                 (raisesDimacs (fn () => S.parseDimacs "p cnf 1 1\n-9999999999 0\n"))
+      val () = check "in-range boundary literal ok"
+                 (S.parseDimacs "p cnf 1 1\n2147483647 0\n" = [[2147483647]])
+
       val () = section "DIMACS: end-to-end solve"
       val () = check     "parsed UNSAT" (isUnsat (S.parseDimacs d1 @ [[~2]]))
       val () = check     "parsed php UNSAT"

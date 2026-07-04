@@ -41,7 +41,9 @@ sig
   (* Parse DIMACS CNF text.  `c ...` comment lines and the `p cnf V C` header
      are ignored; clauses are whitespace-separated literals terminated by 0 and
      may span lines; an optional trailing `%` stops parsing.  Raises `Dimacs`
-     on a non-integer token. *)
+     on a non-integer token or a literal outside the fixed 32-bit `int` range
+     (so parsing behaves identically under MLton and Poly/ML, never raising
+     `Overflow`). *)
   val parseDimacs : string -> cnf
 
   (* Render a CNF back to DIMACS text (with a `p cnf V C` header). *)

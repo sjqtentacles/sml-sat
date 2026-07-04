@@ -120,9 +120,17 @@ struct
       val toks = List.concat (List.map dataToks lines)
       fun untilPct [] = []
         | untilPct (t :: ts) = if t = "%" then [] else t :: untilPct ts
+      (* Parse via `IntInf` and bounds-check into the fixed 32-bit range.
+         `Int.fromString` raises `Overflow` past 2^31 on MLton (32-bit int)
+         but not on Poly/ML (63-bit int); routing through `IntInf` and
+         rejecting out-of-range values keeps the parser total and identical
+         on both compilers. *)
       fun parseInt t =
-        case Int.fromString t of
-          SOME n => n
+        case IntInf.fromString t of
+          SOME n =>
+            if n >= ~2147483648 andalso n <= 2147483647
+            then IntInf.toInt n
+            else raise Dimacs ("integer literal out of range: " ^ t)
         | NONE => raise Dimacs ("not an integer literal: " ^ t)
       val ints = List.map parseInt (untilPct toks)
       fun build [] cur acc =

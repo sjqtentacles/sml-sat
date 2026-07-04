@@ -16,7 +16,9 @@ deterministic.
   chronological backtracking (binary branch on the first unassigned literal).
 - **`verify`** independently checks any returned model against the clauses.
 - **DIMACS** parsing handles `c` comment lines, the `p cnf V C` header,
-  clauses that span lines, and an optional trailing `%`.
+  clauses that span lines, and an optional trailing `%`. A literal outside
+  the fixed 32-bit `int` range raises `Dimacs` (never `Overflow`), so parsing
+  behaves identically under MLton (32-bit `int`) and Poly/ML (63-bit `int`).
 
 > **Scope.** This is classic DPLL — complete and sufficient for the instances
 > here. Clause learning (CDCL) is intentionally out of scope. It is also
@@ -106,20 +108,21 @@ lib/github.com/sjqtentacles/sml-sat/
 examples/
   demo.sml   DIMACS parse + solve + verify walkthrough
 test/
-  harness.sml / test.sml                  42 reference checks
+  harness.sml / test.sml                  46 reference checks
   entry.sml / main.sml
 tools/polybuild                           Poly/ML build wrapper
 ```
 
 ## Tests
 
-42 deterministic checks: trivial SAT/UNSAT, the contradiction `{x} & {~x}`, the
+46 deterministic checks: trivial SAT/UNSAT, the contradiction `{x} & {~x}`, the
 pigeonhole instance `PHP(2,1)`, the full set of eight 3-variable clauses (UNSAT)
 plus every 7-clause subset (SAT), several satisfiable 3-SAT formulas whose
 returned models are re-checked with `verify`, unit-propagation and pure-literal
 paths, model completeness over `numVars`, `verify` rejecting wrong/partial
 models, and DIMACS parsing (comments, multi-line clauses, trailing `%`, empty
-clauses, bad-token errors) with a `toDimacs`/`parseDimacs` round trip. Run
+clauses, bad-token errors, and out-of-range literals that raise `Dimacs` rather
+than `Overflow`) with a `toDimacs`/`parseDimacs` round trip. Run
 `make all-tests` to verify identical output under both compilers.
 
 ## License
